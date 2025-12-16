@@ -162,6 +162,36 @@ app.get(`/update-a-db-record`, (req, res) => {
 });
 
 /*
+ * This router handles POST requests — via the Nunjucks partial
+ * “update-a-record-in-database.njk” — submitted from the form located at
+ * http://localhost:3000/update-a-db-record/
+ */
+app.post(`/update-a-db-record`, (req, res) => {
+    let userFromFrom = req.body.name;
+
+    console.log(userFromFrom);
+    console.log(req.body);
+
+    db.collection(dbCollection).updateOne(
+        { name: userFromFrom },
+        { $set: {"password": req.body.password} }
+    ).then(() => {
+        db.collection(dbCollection).find().toArray((err, arrayObject) => {
+            if (err) {
+                return console.log(err);
+            } else {
+                console.log(
+                    `Update one record into Mongo via an HTML form using POST.\n`);
+                console.log(
+                    `Updated user: ${userFromFrom} | New password: ${req.body.password}`);
+
+                res.render(`read-from-database.njk`, {mongoDBArray: arrayObject});
+            }
+        });
+    });
+});
+
+/*
  * This router handles GET requests to
  * http://localhost:3000/delete-a-db-record/
  */
@@ -170,4 +200,28 @@ app.get(`/delete-a-db-record`, (req, res) => {
         res.render(`delete-a-record-in-database.njk`,
             {mongoDBArray: arrayObject});
     });
+});
+
+/*
+ * This router handles POST requests — via the Nunjucks partial
+ * “delete-a-record-in-database.njk” — submitted from the form located at
+ * http://localhost:3000/delete-a-db-record/
+ */
+app.post(`/delete-a-db-record`, (req, res) => {
+    let userFromFrom = req.body.name;
+
+    db.collection(dbCollection).deleteOne({ name: userFromFrom })
+        .then(() => {
+            db.collection(dbCollection).find().toArray((err, arrayObject) => {
+                if (err) {
+                  return console.log(err);
+                } else {
+                    console.log(`User requested the resource ` +
+                        colors.green, `http://${HOST}:${port}/delete-a-db-record`, colors.reset);
+                    console.log(`Deleted user: ${userFromFrom}`);
+
+                    res.render(`read-from-database.njk`, {mongoDBArray: arrayObject});
+                }
+            });
+        });
 });
